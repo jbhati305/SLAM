@@ -28,26 +28,33 @@ int main()
   Matrix4d transformation;
   vector<Matrix4d> poses;
   cv::Mat image;
+  vector<string> image_files =
+      getImageFilesList(kDatasetPath + "/data_odometry_gray/dataset/sequences/" + SEQUENCE + "/image_0");
 
-  if (readCalibrationFile(calibFile, projectionMatrices, transformation))
-  {
-    // Print results for verification
-    for (size_t i = 0; i < projectionMatrices.size(); i++)
-    {
-      cout << "P" << i << ":\n" << projectionMatrices[i] << "\n\n";
-    }
-    cout << "Tr:\n" << transformation << endl;
-  }
+  // if (readCalibrationFile(calibFile, projectionMatrices, transformation))
+  // {
+  //   // Print results for verification
+  //   for (size_t i = 0; i < projectionMatrices.size(); i++)
+  //   {
+  //     cout << "P" << i << ":\n" << projectionMatrices[i] << "\n\n";
+  //   }
+  //   cout << "Tr:\n" << transformation << endl;
+  // }
 
-  if (readPoseFile(poseFile, poses))
-  {
-    DrawTrajectory(poses);
-  }
+  // if (readPoseFile(poseFile, poses))
+  // {
+  //   DrawTrajectory(poses);
+  // }
 
-  if (readImageFile(imageFile, image))
+  // if (readImageFile(imageFile, image))
+  // {
+  //   cv::imshow("image", image);
+  //   cv::waitKey(0);
+  // }
+
+  for (const auto& image_file : image_files)
   {
-    cv::imshow("image", image);
-    cv::waitKey(0);
+    cout << image_file << endl;
   }
 
   return 0;

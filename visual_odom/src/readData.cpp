@@ -7,6 +7,7 @@
 #include <opencv4/opencv2/imgcodecs.hpp>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 using namespace std;
 using namespace Eigen;
@@ -102,4 +103,30 @@ bool readImageFile(const string& filename, cv::Mat& image)
     return false;
   }
   return true;
+}
+
+vector<string> getImageFilesList(const string& directory_path)
+{
+  vector<string> image_files;
+
+  // Supported image extensions
+  vector<string> extensions = { ".jpg", ".jpeg", ".png", ".bmp" };
+
+  for (const auto& entry : filesystem::directory_iterator(directory_path))
+  {
+    if (entry.is_regular_file())
+    {
+      string extension = entry.path().extension().string();
+      // Convert to lowercase for comparison
+      transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+
+      if (find(extensions.begin(), extensions.end(), extension) != extensions.end())
+      {
+        image_files.push_back(entry.path().string());
+      }
+    }
+  }
+  // Sort files to ensure consistent ordering
+  sort(image_files.begin(), image_files.end());
+  return image_files;
 }
