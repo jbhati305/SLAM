@@ -130,3 +130,26 @@ vector<string> getImageFilesList(const string& directory_path)
   sort(image_files.begin(), image_files.end());
   return image_files;
 }
+
+vector<double> readTimestamps(const string& filename)
+{
+  vector<double> timestamps;
+  ifstream file(filename);
+  if (!file.is_open())
+  {
+    cerr << "Error opening file: " << filename << endl;
+    return timestamps;
+  }
+
+  string line;
+  while (getline(file, line))
+  {
+    if (line.empty())
+      continue;
+
+    timestamps.push_back(stod(line));
+  }
+
+  file.close();
+  return timestamps;
+}

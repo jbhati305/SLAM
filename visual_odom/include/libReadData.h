@@ -17,5 +17,6 @@ bool readCalibrationFile(const string& filename, vector<MatrixXd>& projectionMat
 vector<string> getImageFilesList(const string& directory_path);
 bool readPoseFile(const string& filename, vector<Matrix4d>& poses);
 bool readImageFile(const string& filename, cv::Mat& images);
+vector<double> readTimestamps(const string& filename);
 
 #endif  // LIBHELLOSLAM_H_

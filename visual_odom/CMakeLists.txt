@@ -22,6 +22,9 @@ add_definitions(-DDATASET_PATH="${DATASET_PATH}")
 add_library(readData SHARED src/readData.cpp)
 target_link_libraries(readData ${OpenCV_LIBS})
 
+add_library(dataProcessing SHARED src/dataProcessing.cpp)
+target_link_libraries(dataProcessing ${OpenCV_LIBS})
+
 add_library(Draw SHARED src/Draw.cpp)
 target_link_libraries(Draw ${Pangolin_LIBRARIES})
 
@@ -29,6 +32,7 @@ add_executable(visualOdom visualOdom.cpp)
 target_link_libraries(visualOdom 
     readData
     Draw
+    dataProcessing
     ${OpenCV_LIBS}
     ${Pangolin_LIBRARIES}
     )
