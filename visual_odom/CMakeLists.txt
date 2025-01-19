@@ -3,6 +3,7 @@ project(visual_odom)
 
 find_package(OpenCV REQUIRED)
 find_package(Pangolin REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # Define dataset path relative to project root
 set(DATASET_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../Kitti-Odometry" 
@@ -11,7 +12,8 @@ set(DATASET_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../Kitti-Odometry"
 include_directories(
     ${Pangolin_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
-    "/usr/include/eigen3"
+    ${EIGEN3_INCLUDE_DIR}
+    # "/usr/include/eigen3"
     "include"
     ${DATASET_PATH}
     )
