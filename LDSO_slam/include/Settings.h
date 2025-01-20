@@ -104,6 +104,7 @@ extern float setting_affineOptModeB_huberTH;
 
 extern int setting_gammaWeightPixelSelect;
 extern bool setting_relinAlways;
+extern bool setting_fixCalib;
 extern bool setting_activateAllOnMarg;
 extern bool setting_forceAceptStep;  // may be it should be called AcceptStep??
 
