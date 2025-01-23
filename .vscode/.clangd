@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [/home/jitesh/SLAM/LDSO_slam/include, -I/usr/include, -I/usr/local/include]

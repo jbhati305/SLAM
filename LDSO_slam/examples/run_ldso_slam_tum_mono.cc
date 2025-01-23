@@ -2,22 +2,23 @@
 #include <thread>
 
 #include <clocale>
-#include <cstdlib>
+#include <cmath>
 #include <csignal>
 #include <cstdio>  // TODO: this can be removed ig...
-#include <unistd.h>
-#include <cmath>
+#include <cstdlib>
 #include <sys/time.h>
+#include <unistd.h>
 
 #include <glog/logging.h>
 
-
-using namespace ldso;
-using namespace std;
+#include "DatasetReader.h"
+#include "Settings.h"
 
 // TODO: add includes (Full system)
 // #include "frontend/FullSystem.h"
-#include "DatasetReader.h"
+
+using namespace std;
+using namespace ldso;
 
 // TODO: add global variables
 string vignette = " ";
@@ -55,12 +56,12 @@ void settingDefault(int preset)
     playbackSpeed = (preset == 0 ? 0 : 1);
     preload = preset == 1;
     setting_desiredImmatureDensity = 1500;
-    // TODO: setting_desiredPointDensity = 2000;
-    // TODO: setting_minFrames = 5;
-    // TODO: setting_maxFrames = 7;
-    // TODO: setting_minOptimizationIts = 1;
-    // TODO: setting_maxOptimizationIts = 6;
-    // TODO: setting_logStuff = false;
+    setting_desiredPointDensity = 2000;
+    setting_minFrames = 5;
+    setting_maxFrames = 7;
+    setting_minOptIterations = 1;
+    setting_maxOptIterations = 6;
+    setting_logStuff = false;
   }
   if (preset == 2 || preset == 3)
   {
@@ -74,15 +75,15 @@ void settingDefault(int preset)
     playbackSpeed = (preset == 2 ? 0 : 5);
     preload = preset == 3;
 
-    // TODO: setting_desiredImmatureDensity = 600;
-    // TODO: setting_desiredPointDensity = 800;
-    // TODO: setting_minFrames = 4;
-    // TODO: setting_maxFrames = 6;
-    // TODO: setting_minOptimizationIts = 1;
-    // TODO: setting_maxOptimizationIts = 4;
-    // TODO: benchmarkImageW = 424;
-    // TODO: benchmarkImageH = 320;
-    // TODO: setting_logStuff = false;
+    setting_desiredImmatureDensity = 600;
+    setting_desiredPointDensity = 800;
+    setting_minFrames = 4;
+    setting_maxFrames = 6;
+    setting_minOptIterations = 1;
+    setting_maxOptIterations = 4;
+    benchmarkSetting_width = 424;
+    benchmarkSetting_height = 320;
+    setting_logStuff = false;
   }
   cout << "------------------------------------" << endl;
 }
@@ -107,7 +108,7 @@ void parseArgument(char* arg)
   {
     if (option == 1)
     {
-      /// TODO: setting_debugout_runquiet = true;
+      setting_debugout_runquiet = true;
       cout << "QUIET MODE ENABLED!!" << endl;
     }
     return;
@@ -121,7 +122,7 @@ void parseArgument(char* arg)
   {
     if (option == 0)
     {
-      /// TODO: disableReconfigure = true;
+      disableReconfigure = true;
       cout << "DISABLE RECONFIGURE!!" << endl;
     }
     return;
@@ -130,8 +131,8 @@ void parseArgument(char* arg)
   {
     if (option == 1)
     {
-      /// TODO: disableReconfigure = true;
-      /// TODO: disableROS = true;
+      disableReconfigure = true;
+      disableROS = true;
       cout << "DISABLE ROS (AND RECONFIGURE)!!" << endl;
     }
     return;
@@ -140,7 +141,7 @@ void parseArgument(char* arg)
   {
     if (option == 1)
     {
-      // TODO: setting_logStuff = false;
+      setting_logStuff = false;
       cout << "DISABLE LOGGING!!" << endl;
     }
     return;
@@ -158,7 +159,7 @@ void parseArgument(char* arg)
   {
     if (option == 1)
     {
-      /// TODO: disableAllDisplay = true;
+      disableAllDisplay = true;
       cout << "NO GUI!!" << endl;
     }
     return;
@@ -167,7 +168,7 @@ void parseArgument(char* arg)
   {
     if (option == 1)
     {
-      /// TODO: multiThreading = false;
+      multiThreading = false;
       cout << "NO MULTITHREADING!!" << endl;
     }
     return;
@@ -203,13 +204,13 @@ void parseArgument(char* arg)
   {
     if (option == 1)
     {
-      /// TODO: setting_enableLoopClosing = true;
+      setting_enableLoopClosing = true;
     }
     else
     {
-      /// TODO: setting_enableLoopClosing = false;
+      setting_enableLoopClosing = false;
     }
-    /// TODO: cout<<"LOOP CLOSING "<< (setting_enableLoopClosing ? "ENABLED":"DISABLED") <<endl;
+    cout << "LOOP CLOSING " << (setting_enableLoopClosing ? "ENABLED" : "DISABLED") << endl;
     return;
   }
 
@@ -265,23 +266,33 @@ void parseArgument(char* arg)
       /// TODO: Do we really need these system calls?
       if (42 == system("rm -rf images_out"))
       {
-        cout << "System call returned 42- What are the odds?. This is only here to shut up the compiler" << endl;
+        cout << "System call returned 42- What are the odds?. This is only "
+                "here to shut up the compiler"
+             << endl;
       }
       if (42 == system("mkdir images_out"))
       {
-        cout << "System call returned 42- What are the odds?. This is only here to shut up the compiler" << endl;
+        cout << "System call returned 42- What are the odds?. This is only "
+                "here to shut up the compiler"
+             << endl;
       }
       if (42 == system("rm -rf images_out"))
       {
-        cout << "System call returned 42- What are the odds?. This is only here to shut up the compiler" << endl;
+        cout << "System call returned 42- What are the odds?. This is only "
+                "here to shut up the compiler"
+             << endl;
       }
       if (42 == system("rm -rf images_out"))
       {
-        cout << "System call returned 42- What are the odds?. This is only here to shut up the compiler" << endl;
+        cout << "System call returned 42- What are the odds?. This is only "
+                "here to shut up the compiler"
+             << endl;
       }
       if (42 == system("mkdir images_out"))
       {
-        cout << "System call returned 42- What are the odds?. This is only here to shut up the compiler" << endl;
+        cout << "System call returned 42- What are the odds?. This is only "
+                "here to shut up the compiler"
+             << endl;
       }
       cout << "SAVE IMAGES!!" << endl;
     }
@@ -297,17 +308,17 @@ void parseArgument(char* arg)
     if (option == 1)
     {
       cout << "PHOTOMETRIC MODE WITHOUT CALIBRATION!!" << endl;
-      /// TODO: setting_photometricCalibration = 0;
-      /// TODO: setting_affineOptModeA = 0; // -1 FIX, >=0: OPTIMIZE (with prior, if >0)
-      /// TODO: setting_affineOptModeB = 0; // -1 FIX, >=0: OPTIMIZE (with prior, if >0)
+      setting_photometricCalibration = 0;
+      setting_affineOptModeA = 0;  // -1 FIX, >=0: OPTIMIZE (with prior, if >0)
+      setting_affineOptModeB = 0;  // -1 FIX, >=0: OPTIMIZE (with prior, if >0)
     }
     if (option == 2)
     {
       cout << "PHOTOMETRIC MODE WITH PERFECT IMAGES!!" << endl;
-      /// TODO: setting_photometricCalibration = 0;
-      /// TODO: setting_affineOptModeA = 0; // -1 FIX, >=0: OPTIMIZE (with prior, if >0)
-      /// TODO: setting_affineOptModeB = 0; // -1 FIX, >=0: OPTIMIZE (with prior, if >0)
-      /// TODO: setting_minGradHistAdd = 3;
+      setting_photometricCalibration = 0;
+      setting_affineOptModeA = 0;  // -1 FIX, >=0: OPTIMIZE (with prior, if >0)
+      setting_affineOptModeB = 0;  // -1 FIX, >=0: OPTIMIZE (with prior, if >0)
+      setting_minGradHistAdd = 3;
     }
     return;
   }
@@ -327,30 +338,32 @@ int main(int argc, char** argv)
   }
 
   // Check settings coflict
-  /// TODO:
-  /*
-if(setting_enableLoopClosing && (setting_pointSelection != 1)){
-  LOG(ERROR) << "Loop closing is enabled but the point selection strategy is not set to LDSO, use
-setting_pointSelection=1! Please!!"<<endl; exit(-1);
-}
-*/
 
-  /// TODO: add the following code
-  /*
-  if(setting_showLoopClosing == true){
-    LOG(WARNING)<< "show loop closing results, The program will be paused when a loop is detected!!" << endl;
+  if (setting_enableLoopClosing && (setting_pointSelection != 1))
+  {
+    LOG(ERROR) << "Loop closing is enabled but the point selection strategy is "
+                  "not set to LDSO, use setting_pointSelection=1! Please!!"
+               << endl;
+    exit(-1);
   }
-  */
 
-  /// TODO: shared_ptr<ImageFolderReader> reader(new ImageFolderReader(ImageFolderReader::TUM_MONO, source, calib,
+  if (setting_showLoopClosing == true)
+  {
+    LOG(WARNING) << "show loop closing results, The program will be paused "
+                    "when a loop is detected!!"
+                 << endl;
+  }
+
+  /// TODO: shared_ptr<ImageFolderReader> reader(new
+  /// ImageFolderReader(ImageFolderReader::TUM_MONO, source, calib,
   // gammaCalib,vignette));
 
   /// TODO: reader->setGlobalCalibration();
   /// TODO:
   /*
 if(setting_photometricCalibration >0 && reader->getPhotometricGamma() == 0){
-  LOG(ERROR)<< "ERROR: Don't have photometric calibration. Need to use commandline options mode 1 or 2!!"<<endl;
-  exit(1);
+  LOG(ERROR)<< "ERROR: Don't have photometric calibration. Need to use
+commandline options mode 1 or 2!!"<<endl; exit(1);
 }
 */
 
@@ -394,8 +407,9 @@ fullSystem->linearizeOperation = (playbackSpeed == 0);
   /*
 shared_ptr<PangolinDSOViewer> viewer = nullptr;
 if(!disableAllDisplay){
-  viewer= shared_ptr<PangolinDSOViewer>(new PangolinDSOViewer(wG[0], hG[0], false)); // initialize the pangolin window
-with specific width and height fullSystem->setViewer(viewer);
+  viewer= shared_ptr<PangolinDSOViewer>(new PangolinDSOViewer(wG[0], hG[0],
+false)); // initialize the pangolin window with specific width and height
+fullSystem->setViewer(viewer);
 
 }
 else{
@@ -411,7 +425,8 @@ else{
     // Prepare the correct timestamps for each image:
     /// TODO:
     /*
-    for (int i = lstart; i >= 0 && i < reader->getNumImages() && linc * i < linc * lend; i += linc)
+    for (int i = lstart; i >= 0 && i < reader->getNumImages() && linc * i < linc
+    * lend; i += linc)
     {
       idsToPlay.push_back(i);
       if (timesToPlay.size() == 0)
@@ -422,7 +437,8 @@ else{
       {
         double tsThis = reader->getTimestamp(idsToPlay[idsToPlay.size() - 1]);
         double tsPrev = reader->getTimestamp(idsToPlay[idsToPlay.size() - 2]);
-        timestampsToPlay.push_back(timestampsToPlay.back() + fabs(tsThis - tsPrev) / playbackSpeed);
+        timestampsToPlay.push_back(timestampsToPlay.back() + fabs(tsThis -
+    tsPrev) / playbackSpeed);
       }
     }
     */
@@ -447,17 +463,17 @@ else{
     clock_t started = clock();
     double sInitializerOffset = 0;
 
-    // Here is the main loop for visual slam implementation - Loop through all the images
+    // Here is the main loop for visual slam implementation - Loop through all
+    // the images
     for (int ii = 0; ii < (int)idsToPlay.size(); ii++)
     {
       // Load the image from the reader
-      /// TODO:
-      /*
+      
       while (setting_pause == true)
       {
         usleep(5000);
       }
-      */
+      
 
       /// TODO:
       /*
@@ -493,7 +509,8 @@ else{
         if (sSinceStart < timesToPlayAt[ii])
         {
           /// TODO: Can be removed as it is commented anyway
-          // usleep((int)) ((timesToPlayAt[ii] - sSinceStart) * 1000.0f * 1000.0f);
+          // usleep((int)) ((timesToPlayAt[ii] - sSinceStart) * 1000.0f *
+          // 1000.0f);
         }
         else if (sSinceStart > timesToPlayAt[ii] + 0.5 + 0.1 * (ii % 2))
         {
@@ -533,8 +550,9 @@ else{
       /// TODO:
       /*
       if(fullSystem->isLost){
-        LOG(INFO)<< "LOST!!";  // if the camera is fast moving or does not provide enough information, environment is
-      changing very drastically break;
+        LOG(INFO)<< "LOST!!";  // if the camera is fast moving or does not
+      provide enough information, environment is changing very drastically
+      break;
       }
       */
     }
@@ -553,18 +571,25 @@ else{
     /// TODO: SEGMENATION FAULT
     /*
     int numFramesProcessed = abs(idsToPlay[0] - idsToPlay.back());
-    double numSecondsProcessed = 1234.0;  // TODO: fabs(reader->getTimestamp(idsToPlay[0]) -
-    reader->getTimestamp(idsToPlay.back())); double MilliSecondsTakenSingle = 1000.0f * (ended - started) /
-    (float)(CLOCKS_PER_SEC); double MilliSecondsTakenMT = sInitializerOffset + ((tv_end.tv_sec - tv_start.tv_sec) *
-    1000.0f + (tv_end.tv_usec - tv_start.tv_usec) / 1000.0f);
+    double numSecondsProcessed = 1234.0;  // TODO:
+    fabs(reader->getTimestamp(idsToPlay[0]) -
+    reader->getTimestamp(idsToPlay.back())); double MilliSecondsTakenSingle =
+    1000.0f * (ended - started) / (float)(CLOCKS_PER_SEC); double
+    MilliSecondsTakenMT = sInitializerOffset + ((tv_end.tv_sec -
+    tv_start.tv_sec) * 1000.0f + (tv_end.tv_usec - tv_start.tv_usec) / 1000.0f);
 
     cout << endl
          << "-------------------------------" << endl
-         << numFramesProcessed << "Frames (" << numSecondsProcessed / numSecondsProcessed << " fps)" << endl
-         << MilliSecondsTakenSingle / numFramesProcessed << "ms per frame (single);" << endl
-         << MilliSecondsTakenMT / (float)numFramesProcessed << "ms per frame (MT);" << endl
-         << 1000 / (MilliSecondsTakenSingle / numFramesProcessed) << "x (single core);" << endl
-         << 1000 / (MilliSecondsTakenMT / numFramesProcessed) << "x (multi core);" << "-------------------------------"
+         << numFramesProcessed << "Frames (" << numSecondsProcessed /
+    numSecondsProcessed << " fps)" << endl
+         << MilliSecondsTakenSingle / numFramesProcessed << "ms per frame
+    (single);" << endl
+         << MilliSecondsTakenMT / (float)numFramesProcessed << "ms per frame
+    (MT);" << endl
+         << 1000 / (MilliSecondsTakenSingle / numFramesProcessed) << "x (single
+    core);" << endl
+         << 1000 / (MilliSecondsTakenMT / numFramesProcessed) << "x (multi
+    core);" << "-------------------------------"
          << endl;
     */
 
@@ -574,8 +599,10 @@ else{
         {
           std::ofstream tmlog;
           tmlog.open("logs/time.txt", std::ios::trunc | std::ios::out);
-          tmlog << 1000.0f * (ended - started) / (float)(CLOCKS_PER_SEC * reader->getNumImages()) << " "
-                << ((tv_end.tv_sec - tv_start.tv_sec) * 1000.0f + (tv_end.tv_usec - tv_start.tv_usec) / 1000.0f) /
+          tmlog << 1000.0f * (ended - started) / (float)(CLOCKS_PER_SEC *
+       reader->getNumImages()) << " "
+                << ((tv_end.tv_sec - tv_start.tv_sec) * 1000.0f +
+       (tv_end.tv_usec - tv_start.tv_usec) / 1000.0f) /
                        (float)reader->getNumImages()
                 << " " << endl;
           tmlog.flush();

@@ -1,16 +1,296 @@
+#pragma once
 #ifndef LDSO_SLAM_DATASETREADER_H
 #define LDSO_SLAM_DATASETREADER_H
 
+#include <algorithm>
+#include <boost/format.hpp>
+#include <dirent.h>
+#include <fstream>
+#include <glog/logging.h>
+#include <sstream>
+
+// our own includes
 #include "Settings.h"
+/// TODO: #include "frontend/Undistort.h"
+/// TODO: #include "frontend/ImageRW.h"
+/// TODO: #include "frontend/ImageAndExposure.h"
 
+/// TODO: #include "internal/GlobalFuncs.h"
+/// TODO: #include "internal/GlobalCalib.h"
 
+#if HAS_LIBZIP
 
+#include "zip.h"
 
+#endif
 
+#include <iostream>
 
+using namespace std;
+using namespace ldso;
+/// TODO: using namespace ldso::internal;
 
+// HELPER FUNCTIONS for accessing the file system
 
+// This function loops through the directory , adds "jpg" files to the "files"
+// vector and returns the number of files
+inline int getdir(std::string dir, std::vector<std::string> &files) {
+  DIR *dp;
+  struct dirent *dirp;
+  if ((dp = opendir(dir.c_str())) == NULL) {
+    // Cannot open directory
+    return -1;
+  }
 
+  while ((dirp = readdir(dp)) != NULL) {
+    std::string name = std::string(dirp->d_name);
+    if (name != "." && name != ".." &&
+        name.substr(name.size() - 3, name.size()) == "jpg") {
+      // Add files which end with the .jpg extension
+      files.push_back(name);
+    }
+  }
+  closedir(dp);
 
+  std::sort(files.begin(), files.end());
+  if (dir.at(dir.length() - 1) != '/') {
+    dir = dir + "/";
+  }
+
+  for (unsigned int i = 0; i < files.size(); i++) {
+    if (files[i].at(0) != '/') {
+      files[i] = dir + files[i];
+    }
+  }
+
+  LOG(INFO) << "file size: " << files.size() << endl;
+  return files.size();
+}
+
+struct PrepImageItem {
+  int id;
+  bool isQueud;
+
+  /*
+  ImageAndExposure* pt;
+
+  inline PrepImageItem(int _id){
+      id = _id;
+      isQueud = false;
+      pt = 0;
+  }
+  inline void release(){
+      if(pt!=0){
+          delete pt;
+          pt = 0;
+      }
+  }
+  */
+}
+
+class ImageFolderReader {
+
+public:
+  enum DatasetType {
+    TUM_MONO, // WE WILL USE THIS
+    KITTI,
+    EUROC
+  }
+
+  ImageFolderReader(DatasetType datasetType, std::string path,
+                    std::string calibFile, std::string gammaFile,
+                    std::string vignetteFile) {
+    this->datasetType = datasetType;
+    this->path = path;
+    this->calibFile = calibFile;
+    this->gammaFile = gammaFile;
+    this->vignetteFile = vignetteFile;
+
+#if HAS_LIBZIP
+    ziparchive = 0;
+    databuffer = 0;
+#endif
+
+    isZipped = (path.length() > 4 && path.substr(path.length() - 4) == ".zip");
+    if (datasetType == TUM_MONO) {
+      if (isZipped) {
+#if HAS_LIBZIP
+        int ziperror = 0;
+        ziparchive = zip_open(path.c_str(), ZIP_RDONLY, &ziperror);
+        if (ziperror != 0) {
+          cout << "ERROR: " << "Error opening zip file: " << path.c_str()
+               << endl;
+          exit(1);
+        }
+
+        files.clear();
+        int numEntries = zip_get_num_entries(ziparchive, 0);
+        for (int k = 0; k < numEntries; k++) {
+          const char *name = zip_get_name(ziparchive, k, 0);
+          std::string nameStr = std::string(name);
+          if (nameStr == "." || nameStr == "..") {
+            continue;
+          }
+          files.push_back(nameStr);
+        }
+
+        cout << "Got " << numEntries << " entries and" << (int)files.size()
+             << " files." << endl;
+        std::sort(files.begin(), files.end());
+
+#else
+        LOG(FATAL) << ("ERROR: cannot read .zip archive, as compiled without "
+                       "ziplib!\n");
+
+#endif
+      } else {
+        getdir(path, files);
+      }
+    }
+
+    undistort =
+        Undistort::getUndistorterForFile(calibFile, gammaFile, vignetteFile);
+
+    widthOrg = undistort->getOriginalSize()[0];
+    heightOrg = undistort->getOriginalSize()[1];
+    width = undistort->getSize()[0];
+    height = undistort->getSize()[1];
+
+    // load timestamps if available
+    if (datasetType == TUM_MONO) {
+      loadTimestamps();
+    }
+
+    else if (datasetType == KITTI) {
+      loadTimestampsKITTI();
+    }
+
+    else if (datasetType == EUROC) {
+      loadTimestampsEUROC();
+    }
+  };
+
+  ~ImageFolderReader() {
+#if HAS_LIBZIP
+    if (ziparchive != 0) {
+      zip_close(ziparchive);
+    }
+    if (databuffer != 0) {
+      delete databuffer;
+    }
+#endif // HAS_LIBZIP
+
+    delete undistort;
+  }
+
+  // Helper Methods
+  Eigen::VectorXf getOriginalCalib() {
+    return undistort->getOriginalParameter().cast<float>();
+  }
+
+  Eigen::Vector2i getOriginalDimensions() {
+    return undistort->getOriginalSize();
+  }
+
+  void getCalibMono(Eigen::Matrix3f &K, int &w, int &h) {
+    K = undistort->getK().cast<float>();
+    w = undistor->getSize()[0];
+    h = undistort->getSize()[1];
+  }
+
+  void setGlobalCalibration() {
+    int w_out, h_out;
+    Eigen::Matrix3f K;
+    getCalibMono(K, w_out, h_out);
+    setGlobalCalib(w_out, h_out, K);
+  }
+
+  int getNumImages() { return files.size(); }
+
+  double getTimestamp(int id) {
+    if (timestamps.size() == 0) {
+      return id * 0.1f;
+    }
+    if (id >= (int)timestamps.size()) {
+      return 0;
+    }
+    if (id < 0) {
+      return 0;
+    }
+    return timestamps[id];
+  }
+
+  void prepImage(int id, bool as8U = false) {
+    /// TODO: Empty in original codebase
+  }
+
+  MinimalImageB *getImageRaw(int id) { return getImageRaw_internal(id, 0); }
+
+  ImageAndExposure *getImage(int id, bool foreceLoadDirectly = false) {
+    return getImage_internal(id, 0);
+  }
+
+  inline float *getPhotometricGamma() {
+    if (undistort == 0 || undistort->photometricUndist == 0) {
+      return 0;
+    }
+    return undistort->photometricUndist->getG(); // returns the gamma value
+  }
+
+  Undistort *undistort;
+
+private:
+  MinimalImageB *getImageRaw_internal(int id, int unused) {
+    if (!isZipped) {
+      return IOWrap::readImageBW_8U(files[id]);
+    } else {
+#if HAS_LIBZIP
+      if (databuffer == 0) {
+        databuffer = new char[widthOrg * heightOrg * 6 + 10000];
+      }
+
+      zip_file_t *file = zip_fopen(ziparchive, files[id].c_str(), 0);
+      long readbytes =
+          zip_fread(file, databuffer, (long)widthOrg * heightOrg * 6);
+
+      if (readbytes != widthOrg * heightOrg * 6) {
+        cout << "read " << readbytes << "/"
+             << (long)widthOrg * heightOrg * 6 + 10000 << " bytes for file "
+             << files[id].c_str() << ". increase buffer!!" << endl;
+
+        delete[] databuffer;
+        databuffer = new char[(long)widthOrg * heightOrg * 30];
+        file = zip_fopen(ziparchive, files[id].c_str(), 0);
+        readbytes =
+            zip_fread(file, databuffer, (long)widthOrg * heightOrg * 30);
+
+        if (readbytes > (long)widthOrg * heightOrg * 30) {
+          cout << "Buffer still too small (read " << readbytes << "/"
+               << (long)widthOrg * heightOrg * 30 << " bytes for file "
+               << files[id].c_str() << ". increase buffer!!" << endl;
+          exit(1);
+        }
+      }
+
+      return IOWrap::readStreamBW_8U(databuffer, widthOrg, heightOrg);
+#else
+      LOG(FATAL)
+          << "ERROR: cannot read .zip archive, as compiled without ziplib!\n";
+      exit(1);
+
+#endif
+    }
+  }
+
+  ImageAndExposure *getImage_internal(int id, int unused) {
+    MinimalImageB *minimg = getImageRaw_internal(id, 0);
+
+    ImageAndExposure *imgexp = undistort->undistort<unsigned char>(
+        minimg, (exposure.size() == 0 ? 1.0f : exposure[id]),
+        (timestamps.size() == 0 ? 0.0f : timestamps[id]));
+    delete minimg;
+    return imgexp;
+  }
+};
 
 #endif // LDSO_SLAM_DATASETREADER_H

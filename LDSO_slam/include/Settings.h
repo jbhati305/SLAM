@@ -1,3 +1,4 @@
+#pragma once
 #ifndef LDSO_SLAM_SETTINGS_H
 #define LDSO_SLAM_SETTINGS_H
 

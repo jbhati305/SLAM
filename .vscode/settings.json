@@ -44,5 +44,6 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "dense": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/home/jitesh/SLAM/LDSO_slam"
 }

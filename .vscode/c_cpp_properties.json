@@ -1,0 +1,17 @@
+{
+    "version": 4,
+    "configurations": [
+      {
+        "name": "Linux",
+        "includePath": [
+          "/home/jitesh/SLAM/LDSO_slam/include/include",
+          "/usr/include/c++/13"
+          
+        ],
+        "compilerPath": "/usr/bin/clang++",
+        "cStandard": "c11",
+        "cppStandard": "c++17"
+      }
+    ]
+  }
+  
