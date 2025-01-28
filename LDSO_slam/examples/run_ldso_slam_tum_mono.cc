@@ -354,18 +354,16 @@ int main(int argc, char** argv)
                  << endl;
   }
 
-  /// TODO: shared_ptr<ImageFolderReader> reader(new
-  /// ImageFolderReader(ImageFolderReader::TUM_MONO, source, calib,
-  // gammaCalib,vignette));
+  shared_ptr<ImageFolderReader> reader(
+      new ImageFolderReader(ImageFolderReader::TUM_MONO, source, calib, gammaCalib, vignette));
 
-  /// TODO: reader->setGlobalCalibration();
-  /// TODO:
-  /*
-if(setting_photometricCalibration >0 && reader->getPhotometricGamma() == 0){
-  LOG(ERROR)<< "ERROR: Don't have photometric calibration. Need to use
-commandline options mode 1 or 2!!"<<endl; exit(1);
-}
-*/
+  reader->setGlobalCalibration();
+
+  if (setting_photometricCalibration > 0 && reader->getPhotometricGamma() == 0)
+  {
+    LOG(ERROR) << "ERROR: Don't have photometric calibration. Need to use commandline options mode 1 or 2!!" << endl;
+    exit(1);
+  }
 
   // for stepping through the images
   int lstart = startIdx;
@@ -468,12 +466,11 @@ else{
     for (int ii = 0; ii < (int)idsToPlay.size(); ii++)
     {
       // Load the image from the reader
-      
+
       while (setting_pause == true)
       {
         usleep(5000);
       }
-      
 
       /// TODO:
       /*

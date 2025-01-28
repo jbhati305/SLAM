@@ -7,5 +7,7 @@ slambook-en.pdf
 /Resources
 /visual_odom/build
 /LDSO_slam/build
+/LDSO_slam/.cache
 /LDSO
 /dataset_tum_mono
+/build
